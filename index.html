@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coffee Shop Orders — Practice</title>
+<style>
+  :root{
+    --bg: #14181d;
+    --panel: #1b2129;
+    --panel-2: #10141a;
+    --line: #2a323c;
+    --text: #e7ebef;
+    --muted: #8a95a3;
+    --accent: #d99a5b;
+    --accent-dim: #6b4a2c;
+    --good: #4caf7d;
+    --bad: #d9695f;
+    --easy: #4caf7d;
+    --medium: #e0a63a;
+    --hard: #d9695f;
+    --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--mono);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .window{
+    width:100%;
+    max-width:720px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.6);
+  }
+  .titlebar{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:12px 16px;
+    background:var(--panel-2);
+    border-bottom:1px solid var(--line);
+  }
+  .dot{width:10px;height:10px;border-radius:50%;}
+  .dot.r{background:#d9695f;} .dot.y{background:#e0a63a;} .dot.g{background:#4caf7d;}
+  .filename{margin-left:12px;color:var(--muted);font-size:13px;}
+
+  .content{padding:28px 28px 32px;}
+
+  .top-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:14px;
+  }
+  .tag{color:var(--accent); font-size:13px; letter-spacing:0.04em;}
+  .diff{
+    font-size:11px;
+    padding:3px 10px;
+    border-radius:999px;
+    border:1px solid;
+    letter-spacing:0.03em;
+  }
+  .diff.Easy{color:var(--easy); border-color:var(--easy); background:rgba(76,175,125,0.08);}
+  .diff.Medium{color:var(--medium); border-color:var(--medium); background:rgba(224,166,58,0.08);}
+  .diff.Hard{color:var(--hard); border-color:var(--hard); background:rgba(217,105,95,0.08);}
+
+  h1{ font-size:20px; margin:2px 0 4px; }
+  .sub{color:var(--muted); font-size:13px; margin-bottom:18px;}
+
+  .progress-track{
+    height:4px; background:var(--line); border-radius:4px;
+    overflow:hidden; margin-bottom:22px;
+  }
+  .progress-fill{ height:100%; background:var(--accent); width:0%; transition:width .3s ease; }
+
+  .section-label{
+    font-size:11px; text-transform:uppercase; letter-spacing:0.06em;
+    color:var(--muted); margin:0 0 8px;
+  }
+
+  pre.code{
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:14px 16px;
+    font-size:13px;
+    line-height:1.6;
+    overflow-x:auto;
+    color:var(--text);
+    margin:0;
+    white-space:pre;
+  }
+  pre.code .kw{ color:#c792ea; }
+  pre.code .fn{ color:var(--accent); }
+  pre.code .str{ color:#c3e88d; }
+  pre.code .num{ color:#f78c6c; }
+  pre.code .cmt{ color:var(--muted); }
+
+  .prompt{
+    font-size:15px; line-height:1.6; margin:18px 0 4px; color:var(--text);
+  }
+  .prompt code{
+    background:var(--panel-2); border:1px solid var(--line);
+    padding:1px 6px; border-radius:4px; color:var(--accent);
+  }
+
+  .answer-row{
+    display:flex; gap:10px; margin-top:18px;
+  }
+  .answer-input{
+    flex:1;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:11px 12px;
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:14px;
+  }
+  .answer-input:focus{ outline:none; border-color:var(--accent); }
+  .run-btn{
+    background:var(--accent);
+    color:var(--bg);
+    border:none;
+    padding:0 20px;
+    border-radius:6px;
+    font-family:var(--mono);
+    font-weight:600;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .run-btn:hover{ opacity:0.9; }
+  .run-btn:disabled{ opacity:0.5; cursor:default; }
+
+  .feedback{
+    margin-top:16px;
+    padding:12px 14px;
+    border-radius:6px;
+    border-left:3px solid var(--line);
+    font-size:13px;
+    line-height:1.6;
+    display:none;
+  }
+  .feedback.show{ display:block; }
+  .feedback.correct{ border-left-color:var(--good); background:rgba(76,175,125,0.08); color:var(--text); }
+  .feedback.wrong{ border-left-color:var(--bad); background:rgba(217,105,95,0.08); color:var(--text); }
+  .feedback .verdict{ font-weight:700; margin-bottom:4px; }
+  .feedback.correct .verdict{ color:var(--good); }
+  .feedback.wrong .verdict{ color:var(--bad); }
+  .feedback .answer-line{ color:var(--muted); margin-top:6px; }
+  .feedback .answer-line code{ color:var(--accent); }
+
+  .footer-row{
+    display:flex; justify-content:space-between; align-items:center; margin-top:22px;
+  }
+  .counter{ color:var(--muted); font-size:12px; }
+  .next-btn{
+    background:var(--accent); color:var(--bg); border:none;
+    padding:9px 18px; border-radius:6px; font-family:var(--mono);
+    font-weight:600; font-size:13px; cursor:pointer;
+    opacity:0; pointer-events:none; transition:opacity .15s ease;
+  }
+  .next-btn.show{ opacity:1; pointer-events:auto; }
+
+  .result{ display:none; text-align:center; }
+  .result.show{ display:block; }
+  .score-big{ font-size:48px; color:var(--accent); margin:10px 0; }
+  .score-label{ color:var(--muted); font-size:13px; margin-bottom:26px; }
+  .restart-btn{
+    background:transparent; color:var(--accent);
+    border:1px solid var(--accent-dim); padding:10px 20px;
+    border-radius:6px; font-family:var(--mono); font-size:13px; cursor:pointer;
+  }
+  .restart-btn:hover{ border-color:var(--accent); }
+
+  .breakdown{
+    text-align:left; margin-top:24px; border-top:1px solid var(--line);
+    padding-top:16px; font-size:12px; color:var(--muted);
+  }
+  .breakdown-row{
+    display:flex; justify-content:space-between; align-items:center; padding:6px 0;
+  }
+  .breakdown-row .mark{ font-weight:700; }
+  .breakdown-row .mark.ok{ color:var(--good); }
+  .breakdown-row .mark.no{ color:var(--bad); }
+</style>
+</head>
+<body>
+
+<div class="window">
+  <div class="titlebar">
+    <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+    <span class="filename">coffee_shop_orders.py</span>
+  </div>
+
+  <div class="content">
+    <div id="quizView">
+      <div class="top-row">
+        <span class="tag">&lt;coffee-shop-orders-analysis /&gt;</span>
+        <span class="diff" id="diff"></span>
+      </div>
+      <h1 id="title"></h1>
+      <div class="sub">5 questions · work it out from the data yourself</div>
+
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+      <div class="section-label">Code</div>
+      <pre class="code" id="code"></pre>
+
+      <div class="prompt" id="prompt"></div>
+
+      <div class="answer-row">
+        <input type="text" class="answer-input" id="answerInput" placeholder="Type your answer here...">
+        <button class="run-btn" id="runBtn">Check ▶</button>
+      </div>
+
+      <div class="feedback" id="feedback">
+        <div class="verdict" id="verdict"></div>
+        <div id="explainText"></div>
+        <div class="answer-line" id="answerLine"></div>
+      </div>
+
+      <div class="footer-row">
+        <span class="counter" id="counter"></span>
+        <button class="next-btn" id="nextBtn">Next Question →</button>
+      </div>
+    </div>
+
+    <div class="result" id="resultView">
+      <span class="tag">&lt;results /&gt;</span>
+      <div class="score-big" id="scoreBig">0/5</div>
+      <div class="score-label" id="scoreLabel">Nice work</div>
+      <button class="restart-btn" id="restartBtn">Try again</button>
+      <div class="breakdown" id="breakdown"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Each problem only shows the raw data (defined column by column, like a
+// pandas DataFrame dict). No pandas method or output is shown — you have to
+// decide what to do with the data and work out the answer yourself.
+
+const problems = [
+  {
+    title: "The Latte Count",
+    difficulty: "Easy",
+    code:
+`import pandas as pd
+
+# Data defined column by column
+data = {
+    'Drink': [
+        'Latte', 'Espresso', 'Latte', 'Cappuccino', 'Latte',
+        'Americano', 'Latte', 'Espresso', 'Latte', 'Cappuccino'
+    ]
+}`,
+    prompt: "How many orders in this data were for a <code>Latte</code>?",
+    accepted: ["5"],
+    correctDisplay: "5",
+    explain: "Counting the list: Latte appears at positions 1, 3, 5, 7, and 9 — 5 times total."
+  },
+  {
+    title: "How Do Customers Pay?",
+    difficulty: "Easy",
+    code:
+`import pandas as pd
+
+# Data defined column by column
+data = {
+    'Payment_Method': [
+        'Card', 'Cash', 'Card', 'Card', 'Mobile',
+        'Cash', 'Card', 'Mobile', 'Card', 'Cash'
+    ]
+}`,
+    prompt: "Which payment method is used most often in this data?",
+    accepted: ["card"],
+    correctDisplay: "Card",
+    explain: "Card appears 5 times, Cash appears 3 times, and Mobile appears 2 times — Card is the most common."
+  },
+  {
+    title: "Percent Paying by Card",
+    difficulty: "Medium",
+    code:
+`import pandas as pd
+
+# Data defined column by column
+data = {
+    'Payment_Method': [
+        'Card', 'Cash', 'Card', 'Card', 'Mobile',
+        'Cash', 'Card', 'Mobile', 'Card', 'Cash'
+    ]
+}`,
+    prompt: "What percentage of orders were paid by <code>Card</code>? Round to the nearest whole number.",
+    accepted: ["50", "50%"],
+    correctDisplay: "50%",
+    explain: "5 of the 10 orders used Card → 5 ÷ 10 = 0.50 → 50%."
+  },
+  {
+    title: "Who's Buying Coffee?",
+    difficulty: "Medium",
+    code:
+`import pandas as pd
+
+# Data defined column by column
+data = {
+    'Customer_Type': [
+        'Returning', 'Returning', 'New', 'Returning', 'Guest',
+        'Returning', 'New', 'Returning', 'Guest', 'Returning',
+        'New', 'Returning'
+    ]
+}`,
+    prompt: "Which customer type — other than <code>Returning</code> — appears most often in this data?",
+    accepted: ["new"],
+    correctDisplay: "New",
+    explain: "Returning dominates with 7 orders. Among the rest, New appears 3 times while Guest only appears 2 times."
+  },
+  {
+    title: "Which Drink Wins on Ratings?",
+    difficulty: "Hard",
+    code:
+`import pandas as pd
+
+# Data defined column by column
+data = {
+    'Drink': [
+        'Latte', 'Latte', 'Espresso', 'Latte', 'Espresso',
+        'Latte', 'Espresso', 'Latte', 'Espresso', 'Latte'
+    ],
+    'Rating': [
+        5, 5, 3, 5, 4,
+        4, 3, 5, 5, 5
+    ]
+}`,
+    prompt: "A rating of 5 means the customer was extremely satisfied. Which drink has the <em>higher proportion</em> of 5-star ratings — Latte or Espresso?",
+    accepted: ["latte"],
+    correctDisplay: "Latte",
+    explain: "Latte ratings: 5, 5, 5, 4, 5, 5 → 5 of 6 are 5-star (about 83%). Espresso ratings: 3, 4, 3, 5 → only 1 of 4 is 5-star (25%). Latte has the higher proportion, even though both drinks appear a similar number of times."
+  },
+];
+
+let current = 0;
+let score = 0;
+let locked = false;
+const results = [];
+
+const titleEl = document.getElementById('title');
+const diffEl = document.getElementById('diff');
+const promptEl = document.getElementById('prompt');
+const codeEl = document.getElementById('code');
+const answerInput = document.getElementById('answerInput');
+const runBtn = document.getElementById('runBtn');
+const feedbackEl = document.getElementById('feedback');
+const verdictEl = document.getElementById('verdict');
+const explainTextEl = document.getElementById('explainText');
+const answerLineEl = document.getElementById('answerLine');
+const counterEl = document.getElementById('counter');
+const nextBtn = document.getElementById('nextBtn');
+const progressFill = document.getElementById('progressFill');
+const quizView = document.getElementById('quizView');
+const resultView = document.getElementById('resultView');
+
+function highlightCode(code){
+  return code
+    .replace(/\b(import|as)\b/g, '<span class="kw">$1</span>')
+    .replace(/(#.*)/g, '<span class="cmt">$1</span>')
+    .replace(/'([^']*)'/g, `<span class="str">'$1'</span>`)
+    .replace(/(?<![\w'])(\d+)(?![\w'])/g, '<span class="num">$1</span>');
+}
+
+function loadProblem(){
+  locked = false;
+  answerInput.value = '';
+  answerInput.disabled = false;
+  runBtn.disabled = false;
+  runBtn.textContent = 'Check ▶';
+  feedbackEl.classList.remove('show', 'correct', 'wrong');
+  nextBtn.classList.remove('show');
+
+  const p = problems[current];
+  titleEl.textContent = `${current + 1}. ${p.title}`;
+  diffEl.textContent = p.difficulty;
+  diffEl.className = `diff ${p.difficulty}`;
+  codeEl.innerHTML = highlightCode(p.code);
+  promptEl.innerHTML = p.prompt;
+  counterEl.textContent = `Question ${current + 1} of ${problems.length}`;
+  progressFill.style.width = `${(current / problems.length) * 100}%`;
+
+  setTimeout(() => answerInput.focus(), 50);
+}
+
+function normalize(s){
+  return s.trim().toLowerCase().replace(/\s+/g, ' ').replace(/^"|"$/g, '').replace(/^'|'$/g, '');
+}
+
+function checkAnswer(){
+  if(locked) return;
+  const val = answerInput.value.trim();
+  if(!val) { answerInput.focus(); return; }
+
+  locked = true;
+  answerInput.disabled = true;
+  runBtn.disabled = true;
+
+  const p = problems[current];
+  const norm = normalize(val);
+  const isCorrect = p.accepted.some(a => normalize(a) === norm);
+
+  if(isCorrect) score++;
+  results.push({title: p.title, correct: isCorrect});
+
+  feedbackEl.classList.add('show', isCorrect ? 'correct' : 'wrong');
+  verdictEl.textContent = isCorrect ? '✓ Correct!' : '✗ Not quite';
+  explainTextEl.textContent = p.explain;
+  answerLineEl.innerHTML = isCorrect
+    ? ''
+    : `Expected answer: <code>${p.correctDisplay}</code>`;
+
+  nextBtn.classList.add('show');
+}
+
+runBtn.addEventListener('click', checkAnswer);
+answerInput.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter') checkAnswer();
+});
+
+nextBtn.addEventListener('click', () => {
+  current++;
+  if(current < problems.length){
+    loadProblem();
+  } else {
+    showResults();
+  }
+});
+
+function showResults(){
+  progressFill.style.width = '100%';
+  quizView.style.display = 'none';
+  resultView.classList.add('show');
+
+  document.getElementById('scoreBig').textContent = `${score}/${problems.length}`;
+  const pct = Math.round((score / problems.length) * 100);
+  let label = "Keep practicing";
+  if(pct >= 90) label = "You crushed it";
+  else if(pct >= 70) label = "Solid analysis skills";
+  else if(pct >= 50) label = "Getting there";
+  document.getElementById('scoreLabel').textContent = `${label} — ${pct}%`;
+
+  const breakdown = document.getElementById('breakdown');
+  breakdown.innerHTML = results.map((r, i) =>
+    `<div class="breakdown-row">
+      <span>${i + 1}. ${r.title}</span>
+      <span class="mark ${r.correct ? 'ok' : 'no'}">${r.correct ? '✓ correct' : '✗ missed'}</span>
+    </div>`
+  ).join('');
+}
+
+document.getElementById('restartBtn').addEventListener('click', () => {
+  current = 0; score = 0; results.length = 0;
+  quizView.style.display = 'block';
+  resultView.classList.remove('show');
+  loadProblem();
+});
+
+loadProblem();
+</script>
+
+</body>
+</html>
