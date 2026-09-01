@@ -231,6 +231,11 @@
   <div class="content">
     <div id="quizView">
       <div class="setup-banner">
+        <strong>Before you start:</strong> paste the shareable CSV URL from Google Drive below.
+        This gets swapped into every <code>pd.read_csv(...)</code> block so the code matches
+        what you'd actually run in Colab or Jupyter. (Tip: Drive share links need
+        <code>/uc?export=download&amp;id=FILE_ID</code> format, not the normal "view" link.)
+        <input type="text" id="csvUrlInput" placeholder="https://drive.google.com/uc?export=download&id=YOUR_FILE_ID">
       </div>
 
       <div class="top-row">
