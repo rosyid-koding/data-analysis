@@ -56,6 +56,31 @@
 
   .content{padding:28px 28px 32px;}
 
+  .setup-banner{
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-left:3px solid var(--accent);
+    border-radius:0 6px 6px 0;
+    padding:14px 16px;
+    margin-bottom:22px;
+    font-size:12.5px;
+    line-height:1.6;
+    color:var(--muted);
+  }
+  .setup-banner strong{ color:var(--text); }
+  .setup-banner input{
+    width:100%;
+    margin-top:8px;
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:9px 10px;
+    color:var(--accent);
+    font-family:var(--mono);
+    font-size:12.5px;
+  }
+  .setup-banner input:focus{ outline:none; border-color:var(--accent); }
+
   .top-row{
     display:flex;
     justify-content:space-between;
@@ -210,7 +235,7 @@
         <span class="diff" id="diff"></span>
       </div>
       <h1 id="title"></h1>
-      <div class="sub">5 questions · work it out from the data yourself</div>
+      <div class="sub">5 questions · 500-row dataset · write real pandas code to solve these</div>
 
       <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
 
@@ -247,105 +272,72 @@
 </div>
 
 <script>
-// Each problem only shows the raw data (defined column by column, like a
-// pandas DataFrame dict). No pandas method or output is shown — you have to
-// decide what to do with the data and work out the answer yourself.
+// This dataset is 500 rows — too large to eyeball. Students must actually
+// load it with pd.read_csv() and run the right pandas operation themselves;
+// no method or printed output is shown, only the loading code and the question.
+
+const DEFAULT_URL = "https://drive.google.com/uc?export=download&id=14ruin2frBWQu1MwWCnmA0Lez0HBJRSzp";
 
 const problems = [
   {
     title: "The Latte Count",
     difficulty: "Easy",
-    code:
+    codeTemplate:
 `import pandas as pd
 
-# Data defined column by column
-data = {
-    'Drink': [
-        'Latte', 'Espresso', 'Latte', 'Cappuccino', 'Latte',
-        'Americano', 'Latte', 'Espresso', 'Latte', 'Cappuccino'
-    ]
-}`,
-    prompt: "How many orders in this data were for a <code>Latte</code>?",
-    accepted: ["5"],
-    correctDisplay: "5",
-    explain: "Counting the list: Latte appears at positions 1, 3, 5, 7, and 9 — 5 times total."
+df = pd.read_csv("{{URL}}")`,
+    prompt: "How many orders in <code>df</code> are for a <code>Latte</code>? (Column: <code>Drink</code>)",
+    accepted: ["153"],
+    correctDisplay: "153",
+    explain: "Out of 500 orders, 153 have Drink == 'Latte' — you can get this with df['Drink'].value_counts() or (df['Drink'] == 'Latte').sum()."
   },
   {
     title: "How Do Customers Pay?",
     difficulty: "Easy",
-    code:
+    codeTemplate:
 `import pandas as pd
 
-# Data defined column by column
-data = {
-    'Payment_Method': [
-        'Card', 'Cash', 'Card', 'Card', 'Mobile',
-        'Cash', 'Card', 'Mobile', 'Card', 'Cash'
-    ]
-}`,
-    prompt: "Which payment method is used most often in this data?",
+df = pd.read_csv("{{URL}}")`,
+    prompt: "Which payment method is used most often? (Column: <code>Payment_Method</code>)",
     accepted: ["card"],
     correctDisplay: "Card",
-    explain: "Card appears 5 times, Cash appears 3 times, and Mobile appears 2 times — Card is the most common."
+    explain: "Card leads with 278 orders, followed by Cash (138) and Mobile (84)."
   },
   {
     title: "Percent Paying by Card",
     difficulty: "Medium",
-    code:
+    codeTemplate:
 `import pandas as pd
 
-# Data defined column by column
-data = {
-    'Payment_Method': [
-        'Card', 'Cash', 'Card', 'Card', 'Mobile',
-        'Cash', 'Card', 'Mobile', 'Card', 'Cash'
-    ]
-}`,
+df = pd.read_csv("{{URL}}")`,
     prompt: "What percentage of orders were paid by <code>Card</code>? Round to the nearest whole number.",
-    accepted: ["50", "50%"],
-    correctDisplay: "50%",
-    explain: "5 of the 10 orders used Card → 5 ÷ 10 = 0.50 → 50%."
+    accepted: ["56", "56%", "55.6", "55.6%", "55"],
+    correctDisplay: "~56%",
+    explain: "278 of 500 orders used Card → 278 ÷ 500 = 0.556 → about 56%. You'd get this with value_counts(normalize=True)."
   },
   {
     title: "Who's Buying Coffee?",
     difficulty: "Medium",
-    code:
+    codeTemplate:
 `import pandas as pd
 
-# Data defined column by column
-data = {
-    'Customer_Type': [
-        'Returning', 'Returning', 'New', 'Returning', 'Guest',
-        'Returning', 'New', 'Returning', 'Guest', 'Returning',
-        'New', 'Returning'
-    ]
-}`,
-    prompt: "Which customer type — other than <code>Returning</code> — appears most often in this data?",
+df = pd.read_csv("{{URL}}")`,
+    prompt: "Which customer type — other than <code>Returning</code> — appears most often? (Column: <code>Customer_Type</code>)",
     accepted: ["new"],
     correctDisplay: "New",
-    explain: "Returning dominates with 7 orders. Among the rest, New appears 3 times while Guest only appears 2 times."
+    explain: "Returning leads with 271 orders. Among the rest, New has 151 while Guest only has 78."
   },
   {
     title: "Which Drink Wins on Ratings?",
     difficulty: "Hard",
-    code:
+    codeTemplate:
 `import pandas as pd
 
-# Data defined column by column
-data = {
-    'Drink': [
-        'Latte', 'Latte', 'Espresso', 'Latte', 'Espresso',
-        'Latte', 'Espresso', 'Latte', 'Espresso', 'Latte'
-    ],
-    'Rating': [
-        5, 5, 3, 5, 4,
-        4, 3, 5, 5, 5
-    ]
-}`,
-    prompt: "A rating of 5 means the customer was extremely satisfied. Which drink has the <em>higher proportion</em> of 5-star ratings — Latte or Espresso?",
+df = pd.read_csv("{{URL}}")`,
+    prompt: "A <code>Rating</code> of 5 means the customer was extremely satisfied. Comparing only <code>Latte</code> and <code>Espresso</code> orders, which drink has the <em>higher proportion</em> of 5-star ratings?",
     accepted: ["latte"],
     correctDisplay: "Latte",
-    explain: "Latte ratings: 5, 5, 5, 4, 5, 5 → 5 of 6 are 5-star (about 83%). Espresso ratings: 3, 4, 3, 5 → only 1 of 4 is 5-star (25%). Latte has the higher proportion, even though both drinks appear a similar number of times."
+    explain: "About 69% of Latte orders are rated 5, compared to only about 16% of Espresso orders. You'd filter each drink, then check the share of Rating == 5 (e.g. with groupby + value_counts(normalize=True))."
   },
 ];
 
@@ -369,13 +361,18 @@ const nextBtn = document.getElementById('nextBtn');
 const progressFill = document.getElementById('progressFill');
 const quizView = document.getElementById('quizView');
 const resultView = document.getElementById('resultView');
+const csvUrlInput = document.getElementById('csvUrlInput');
+
+function currentUrl(){
+  return csvUrlInput.value.trim() || DEFAULT_URL;
+}
 
 function highlightCode(code){
   return code
     .replace(/\b(import|as)\b/g, '<span class="kw">$1</span>')
     .replace(/(#.*)/g, '<span class="cmt">$1</span>')
-    .replace(/'([^']*)'/g, `<span class="str">'$1'</span>`)
-    .replace(/(?<![\w'])(\d+)(?![\w'])/g, '<span class="num">$1</span>');
+    .replace(/"([^"]*)"/g, `<span class="str">"$1"</span>`)
+    .replace(/(?<![\w'"])(\d+)(?![\w'"])/g, '<span class="num">$1</span>');
 }
 
 function loadProblem(){
@@ -391,13 +388,21 @@ function loadProblem(){
   titleEl.textContent = `${current + 1}. ${p.title}`;
   diffEl.textContent = p.difficulty;
   diffEl.className = `diff ${p.difficulty}`;
-  codeEl.innerHTML = highlightCode(p.code);
+  const code = p.codeTemplate.replace('{{URL}}', currentUrl());
+  codeEl.innerHTML = highlightCode(code);
   promptEl.innerHTML = p.prompt;
   counterEl.textContent = `Question ${current + 1} of ${problems.length}`;
   progressFill.style.width = `${(current / problems.length) * 100}%`;
 
   setTimeout(() => answerInput.focus(), 50);
 }
+
+csvUrlInput.addEventListener('input', () => {
+  if(!locked){
+    const p = problems[current];
+    codeEl.innerHTML = highlightCode(p.codeTemplate.replace('{{URL}}', currentUrl()));
+  }
+});
 
 function normalize(s){
   return s.trim().toLowerCase().replace(/\s+/g, ' ').replace(/^"|"$/g, '').replace(/^'|'$/g, '');
